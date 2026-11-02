@@ -8,6 +8,7 @@
 namespace Oldev\HealthReport\Scan;
 
 use Oldev\HealthReport\Crm\CrmGateway;
+use Oldev\HealthReport\Crm\LeadOutbox;
 use Oldev\HealthReport\Data\AbuseLog;
 use Oldev\HealthReport\Data\Counters;
 use Oldev\HealthReport\Data\Owners;
@@ -85,6 +86,8 @@ final class Maintenance {
 		}
 
 		AbuseLog::purge( $cutoff );
+		LeadOutbox::purge( $cutoff );
+		LeadOutbox::requeue_stalled();
 		Owners::purge_links();
 		Counters::purge();
 

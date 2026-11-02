@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Schema {
 
-	public const VERSION = '1';
+	public const VERSION = '2';
 
 	/**
 	 * Returns a prefixed table name.
@@ -45,6 +45,7 @@ final class Schema {
 		$limits  = self::table( 'limits' );
 		$nonces  = self::table( 'nonces' );
 		$abuse   = self::table( 'abuse_log' );
+		$outbox  = self::table( 'outbox' );
 
 		dbDelta(
 			"CREATE TABLE {$scans} (
@@ -140,9 +141,30 @@ final class Schema {
 				PRIMARY KEY  (id),
 				KEY event_created (event,created_at),
 				KEY created_at (created_at)
+			) {$charset};
+			CREATE TABLE {$outbox} (
+				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				type varchar(20) NOT NULL,
+				email_hash char(64) NOT NULL,
+				payload longtext NOT NULL,
+				attempts tinyint(3) unsigned NOT NULL DEFAULT 0,
+				created_at datetime NOT NULL,
+				PRIMARY KEY  (id),
+				KEY email_hash (email_hash),
+				KEY created_at (created_at)
 			) {$charset};"
 		);
 
 		update_option( 'shr_schema_version', self::VERSION, false );
+	}
+
+	/**
+	 * Tells whether the stored schema is older than this code. Activation does not run again on an
+	 * already active plugin, so upgrades are detected on load.
+	 *
+	 * @return bool
+	 */
+	public static function is_outdated(): bool {
+		return self::VERSION !== get_option( 'shr_schema_version' );
 	}
 }

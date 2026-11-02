@@ -9,7 +9,7 @@ namespace Oldev\HealthReport\Tests;
 
 use Oldev\HealthReport\Admin\AdminPage;
 use Oldev\HealthReport\Crm\CrmGateway;
-use Oldev\HealthReport\Crm\FluentCrmGateway;
+use Oldev\HealthReport\Crm\LeadOutbox;
 use Oldev\HealthReport\Data\AbuseLog;
 use Oldev\HealthReport\Data\Owners;
 use Oldev\HealthReport\Data\Scans;
@@ -152,36 +152,46 @@ class PipelineTest extends TestCase {
 		$this->assertCount( 1, $mailer->sent );
 	}
 
-	public function test_crm_tags_follow_findings_and_consent(): void {
-		$tags = FluentCrmGateway::tags_for(
+	public function test_the_lead_row_follows_findings_and_consent(): void {
+		$row = LeadOutbox::lead_data(
 			array(
+				'email'                => ' Owner@Example.com ',
 				'pdf_consent_at'       => '2026-11-02 10:00:00',
 				'marketing_consent_at' => null,
 			),
-			array( 'grade' => 'C' ),
+			array(
+				'uuid'          => '0f1e2d3c-0000-4000-8000-000000000001',
+				'domain'        => 'site.org',
+				'overall_score' => 71,
+				'grade'         => 'C',
+				'wants_pdf'     => 1,
+			),
 			array(
 				array(
 					'category' => 'security',
 					'outcome'  => 'fail',
+					'title'    => 'No HSTS header',
 				),
 				array(
 					'category' => 'wordpress',
 					'outcome'  => 'pass',
+					'title'    => 'Version hidden',
 				),
 				array(
 					'category' => 'email',
 					'outcome'  => 'warn',
+					'title'    => 'DMARC is not enforced',
 				),
 			)
 		);
 
-		$this->assertArrayHasKey( 'shr-grade-c', $tags );
-		$this->assertArrayHasKey( 'shr-consent-pdf', $tags );
-		$this->assertArrayHasKey( 'shr-no-marketing', $tags );
-		$this->assertArrayHasKey( 'shr-fail-security', $tags );
-		$this->assertArrayHasKey( 'shr-wordpress', $tags );
-		$this->assertArrayNotHasKey( 'shr-fail-email', $tags );
-		$this->assertArrayNotHasKey( 'shr-consent-marketing', $tags );
+		$this->assertSame( 'owner@example.com', $row['email'] );
+		$this->assertSame( 'security', $row['failed_checks'] );
+		$this->assertSame( 'No HSTS header | DMARC is not enforced', $row['top_fixes'] );
+		$this->assertTrue( $row['pdf_requested'] );
+		$this->assertFalse( $row['marketing_consent'] );
+		$this->assertSame( 'C', $row['grade'] );
+		$this->assertStringContainsString( '/report/0f1e2d3c-0000-4000-8000-000000000001/', $row['report_url'] );
 	}
 
 	public function test_retention_deletes_what_is_past_thirty_days_and_keeps_the_rest(): void {

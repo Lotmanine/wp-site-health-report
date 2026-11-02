@@ -68,7 +68,7 @@ services:
       SHR_DAILY_AI_CAP: ${SHR_DAILY_AI_CAP:-25}
       SHR_AI_MODEL: ${SHR_AI_MODEL:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      SHR_N8N_LEADS_URL: ${SHR_N8N_LEADS_URL:-}
       SHR_MAIL_LOG_DIR: /tmp/shr-mail
     volumes:
       - wp_data:/var/www/html

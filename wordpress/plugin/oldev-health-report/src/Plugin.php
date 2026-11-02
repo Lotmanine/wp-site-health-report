@@ -9,12 +9,12 @@ namespace Oldev\HealthReport;
 
 use Oldev\HealthReport\Admin\AdminPage;
 use Oldev\HealthReport\Crm\CrmGateway;
-use Oldev\HealthReport\Crm\FluentCrmGateway;
-use Oldev\HealthReport\Crm\NullCrmGateway;
+use Oldev\HealthReport\Crm\LeadOutbox;
+use Oldev\HealthReport\Crm\N8nLeadGateway;
 use Oldev\HealthReport\Frontend\Blocks;
-use Oldev\HealthReport\Mail\BrevoMailer;
 use Oldev\HealthReport\Mail\LogMailer;
 use Oldev\HealthReport\Mail\MailService;
+use Oldev\HealthReport\Mail\N8nMailer;
 use Oldev\HealthReport\Rest\Routes;
 use Oldev\HealthReport\Scan\CallbackHandler;
 use Oldev\HealthReport\Scan\Dispatcher;
@@ -57,6 +57,7 @@ final class Plugin {
 	 * @return void
 	 */
 	public function boot(): void {
+		add_action( 'init', array( Installer::class, 'upgrade' ), 1 );
 		add_action(
 			'init',
 			static function (): void {
@@ -101,6 +102,12 @@ final class Plugin {
 			}
 		);
 		add_action(
+			LeadOutbox::ACTION,
+			static function ( int $id ): void {
+				LeadOutbox::deliver( $id );
+			}
+		);
+		add_action(
 			Maintenance::WATCHDOG_ACTION,
 			function (): void {
 				$this->maintenance()->watchdog();
@@ -115,12 +122,12 @@ final class Plugin {
 	}
 
 	/**
-	 * Builds the mail service. An empty key selects the log-only transport.
+	 * Builds the mail service. Without an n8n URL, mail is written to a log instead of sent.
 	 *
 	 * @return MailService
 	 */
 	public function mail(): MailService {
-		$mailer = '' === Config::string( 'BREVO_API_KEY' ) ? new LogMailer() : new BrevoMailer();
+		$mailer = '' === Config::leads_url() ? new LogMailer() : new N8nMailer();
 		return new MailService( $mailer );
 	}
 
@@ -130,7 +137,7 @@ final class Plugin {
 	 * @return CrmGateway
 	 */
 	public function crm(): CrmGateway {
-		return function_exists( 'FluentCrmApi' ) ? new FluentCrmGateway() : new NullCrmGateway();
+		return new N8nLeadGateway();
 	}
 
 	/**

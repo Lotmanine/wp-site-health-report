@@ -24,10 +24,17 @@ function latestMail( to ) {
 	return mails.filter( ( mail ) => mail.to === to ).pop();
 }
 
-function contact( email ) {
+// Latest lead event queued for n8n about an address. Locally no n8n URL is set, so events stay queued.
+function lead( email ) {
 	const output = wpEval( `<?php
-		$c = \\FluentCrm\\App\\Models\\Subscriber::where( 'email', '${ email }' )->first();
-		echo wp_json_encode( $c ? array( 'status' => $c->status, 'tags' => $c->tags->pluck( 'slug' )->toArray() ) : null );
+		$found = null;
+		foreach ( \\Oldev\\HealthReport\\Crm\\LeadOutbox::pending() as $row ) {
+			$data = json_decode( $row['payload'], true );
+			if ( ( $data['email'] ?? '' ) === '${ email }' ) {
+				$found = array( 'type' => $row['type'], 'data' => $data );
+			}
+		}
+		echo wp_json_encode( $found );
 	` );
 	return JSON.parse( output );
 }
@@ -70,4 +77,4 @@ async function fillScanForm( page, url, options = {} ) {
 
 const shot = ( name ) => path.join( root, 'docs/screenshots', name + '.png' );
 
-module.exports = { adminCredentials, contact, dockerExec, fillScanForm, latestMail, noSidewaysScroll, shot, wpEval };
+module.exports = { adminCredentials, lead, dockerExec, fillScanForm, latestMail, noSidewaysScroll, shot, wpEval };

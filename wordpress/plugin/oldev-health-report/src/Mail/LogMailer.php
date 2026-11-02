@@ -1,6 +1,6 @@
 <?php
 /**
- * Log-only transport, used while BREVO_API_KEY is empty.
+ * Log-only transport, used while SHR_N8N_LEADS_URL is empty.
  *
  * @package OldevHealthReport
  */

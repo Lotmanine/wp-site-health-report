@@ -30,6 +30,28 @@ final class Installer {
 	}
 
 	/**
+	 * Applies schema changes and refreshes the privacy page after an update. The privacy text is owned
+	 * by the plugin, so it follows what the code does with personal data.
+	 *
+	 * @return void
+	 */
+	public static function upgrade(): void {
+		if ( ! Schema::is_outdated() ) {
+			return;
+		}
+		Schema::install();
+		$page = get_page_by_path( 'privacy' );
+		if ( $page instanceof \WP_Post ) {
+			wp_update_post(
+				array(
+					'ID'           => $page->ID,
+					'post_content' => self::privacy_content(),
+				)
+			);
+		}
+	}
+
+	/**
 	 * Creates the plugin pages once. Existing pages are left alone.
 	 *
 	 * @return void
@@ -71,11 +93,11 @@ final class Installer {
 			array( 'h2', 'Why it is used' ),
 			array( 'ul', array( 'To run the scan and show your report.', 'To email the PDF report, only if you ask for it.', 'To let you sign in to your dashboard with a one-time link.', 'To send occasional messages about website health, only if you tick that box.', 'To stop abuse of the service.' ) ),
 			array( 'h2', 'Services involved' ),
-			array( 'ul', array( 'Cloudflare Turnstile checks that the request comes from a person.', 'Google PageSpeed Insights measures performance for the scanned address.', 'Public DNS-over-HTTPS resolvers answer the SPF, DKIM and DMARC lookups.', 'Brevo delivers email.', 'Anthropic writes the summary when the AI summary is enabled. It receives scores and check results for the scanned domain, not your email address.' ) ),
+			array( 'ul', array( 'Cloudflare Turnstile checks that the request comes from a person.', 'Google PageSpeed Insights measures performance for the scanned address.', 'Public DNS-over-HTTPS resolvers answer the SPF, DKIM and DMARC lookups.', 'Your email address, the scanned domain, its score and your consents are stored in a Google Sheets spreadsheet that only OLDEV can open, through an n8n automation run by OLDEV.', 'Brevo delivers email.', 'Wordfence, a security plugin on this site, records the IP addresses of requests to block attacks. Those records stay on this server.', 'Anthropic writes the summary when the AI summary is enabled. It receives scores and check results for the scanned domain, not your email address.' ) ),
 			array( 'h2', 'How long it is kept' ),
-			array( 'p', 'Reports, findings and the abuse log are deleted after 30 days by an automated job. An email address with no remaining reports is deleted at the same time, including its contact record.' ),
+			array( 'p', 'Reports, findings and the abuse log are deleted after 30 days by an automated job. An email address with no remaining reports is deleted at the same time, including its row in the leads spreadsheet.' ),
 			array( 'h2', 'How to delete your data' ),
-			array( 'p', 'Every report has a button that deletes that report at once. If you left an email address, sign in on the Dashboard page and choose Delete my data to erase your reports, your address and your contact record. You can also email lotfi@oldev.site.' ),
+			array( 'p', 'Every report has a button that deletes that report at once. If you left an email address, sign in on the Dashboard page and choose Delete my data to erase your reports, your address and your row in the leads spreadsheet. You can also email lotfi@oldev.site.' ),
 			array( 'h2', 'What the scan does not do' ),
 			array( 'p', 'Scans are passive. They read the public home page, robots.txt, the sitemap, the certificate and public DNS records. They do not scan ports, test passwords or attempt to exploit anything.' ),
 		);

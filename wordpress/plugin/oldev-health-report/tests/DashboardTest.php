@@ -16,7 +16,7 @@ class DashboardTest extends TestCase {
 	private function mail_dir(): string {
 		$dir = sys_get_temp_dir() . '/shr-mail-test-' . getmypid();
 		$this->env( 'SHR_MAIL_LOG_DIR', $dir );
-		$this->env( 'BREVO_API_KEY', '' );
+		$this->env( 'SHR_N8N_LEADS_URL', '' );
 		return $dir;
 	}
 

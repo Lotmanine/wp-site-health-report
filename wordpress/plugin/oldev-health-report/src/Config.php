@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 final class Config {
 
 	/**
-	 * Hard ceiling on project emails per day. Brevo's allowance is shared with the main site.
+	 * Hard ceiling on project emails per day. n8n sends them through Brevo, whose allowance is shared with the main site.
 	 */
 	public const EMAIL_CAP_CEILING = 50;
 
@@ -90,5 +90,14 @@ final class Config {
 			return rest_url( 'shr/v1/callback' );
 		}
 		return rtrim( $base, '/' ) . '/wp-json/shr/v1/callback';
+	}
+
+	/**
+	 * The n8n webhook for leads and email. Empty keeps leads in the outbox and writes mail to a log.
+	 *
+	 * @return string
+	 */
+	public static function leads_url(): string {
+		return self::string( 'SHR_N8N_LEADS_URL' );
 	}
 }

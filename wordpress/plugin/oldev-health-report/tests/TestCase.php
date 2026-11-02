@@ -40,7 +40,7 @@ abstract class TestCase extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 		global $wpdb;
-		foreach ( array( 'scans', 'findings', 'owners', 'magic_links', 'usage', 'limits', 'nonces', 'abuse_log' ) as $table ) {
+		foreach ( array( 'scans', 'findings', 'owners', 'magic_links', 'usage', 'limits', 'nonces', 'abuse_log', 'outbox' ) as $table ) {
 			$wpdb->query( 'DELETE FROM ' . $wpdb->prefix . 'shr_' . $table );
 		}
 		$this->http     = array();

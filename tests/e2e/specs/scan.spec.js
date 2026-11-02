@@ -1,5 +1,5 @@
 const { test, expect } = require( '@playwright/test' );
-const { adminCredentials, contact, fillScanForm, latestMail, noSidewaysScroll, shot } = require( './helpers' );
+const { adminCredentials, lead, fillScanForm, latestMail, noSidewaysScroll, shot } = require( './helpers' );
 
 test.describe.configure( { mode: 'serial' } );
 
@@ -97,10 +97,13 @@ test( 'a full scan goes from form to report, then PDF and CRM', async ( { page }
 	await expect.poll( () => latestMail( email )?.subject, { timeout: 30000 } ).toContain( 'oldev.site' );
 	expect( latestMail( email ).pdf ).toMatch( /\.pdf$/ );
 
-	await expect.poll( () => contact( email ), { timeout: 30000 } ).not.toBeNull();
-	const crm = contact( email );
-	expect( crm.status ).toBe( 'subscribed' );
-	expect( crm.tags ).toEqual( expect.arrayContaining( [ 'shr-report', 'shr-consent-pdf', 'shr-consent-marketing', 'shr-fail-security' ] ) );
+	await expect.poll( () => lead( email ), { timeout: 30000 } ).not.toBeNull();
+	const row = lead( email );
+	expect( row.type ).toBe( 'lead.upsert' );
+	expect( row.data.pdf_requested ).toBe( true );
+	expect( row.data.marketing_consent ).toBe( true );
+	expect( row.data.failed_checks ).toContain( 'security' );
+	expect( row.data.domain ).toBe( 'oldev.site' );
 } );
 
 test( 'without marketing consent the contact stays transactional', async ( { page }, info ) => {
@@ -112,10 +115,8 @@ test( 'without marketing consent the contact stays transactional', async ( { pag
 	await page.waitForURL( /\/report\// );
 	await expect( page.getByTestId( 'summary' ) ).toBeVisible( { timeout: 200000 } );
 
-	await expect.poll( () => contact( email ), { timeout: 30000 } ).not.toBeNull();
-	const crm = contact( email );
-	expect( crm.status ).toBe( 'transactional' );
-	expect( crm.tags ).toContain( 'shr-no-marketing' );
+	await expect.poll( () => lead( email ), { timeout: 30000 } ).not.toBeNull();
+	expect( lead( email ).data.marketing_consent ).toBe( false );
 } );
 
 test( 'the dashboard signs in by link, rescans, compares and deletes', async ( { page }, info ) => {
@@ -150,7 +151,8 @@ test( 'the dashboard signs in by link, rescans, compares and deletes', async ( {
 	await page.getByRole( 'button', { name: 'Delete my data' } ).click();
 	await page.waitForURL( ( url ) => '/' === url.pathname );
 
-	await expect.poll( () => contact( email ), { timeout: 15000 } ).toBeNull();
+	// The spreadsheet row is erased through n8n, and nothing else about the address is left to send.
+	await expect.poll( () => lead( email )?.type, { timeout: 15000 } ).toBe( 'lead.erase' );
 } );
 
 test( 'a report can be deleted from its own page', async ( { page } ) => {

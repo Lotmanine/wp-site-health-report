@@ -107,11 +107,12 @@ class CapsAndSummaryTest extends TestCase {
 		$this->assertSame( 1, Counters::used_today( 'emails' ) );
 	}
 
-	public function test_brevo_sends_from_the_authenticated_address(): void {
-		$this->env( 'BREVO_API_KEY', 'test-key' );
-		$this->http['api.brevo.com'] = $this->http_response( 201, '{"messageId":"x"}' );
+	public function test_n8n_mail_is_signed_and_carries_the_pdf(): void {
+		$this->env( 'SHR_N8N_LEADS_URL', 'https://n8n.example.org/webhook/health-lead' );
+		$this->env( 'SHR_HMAC_SECRET', 'test-hmac-secret' );
+		$this->http['webhook/health-lead'] = $this->http_response( 200, '{"ok":true}' );
 
-		$sent = ( new \Oldev\HealthReport\Mail\BrevoMailer() )->send(
+		$sent = ( new \Oldev\HealthReport\Mail\N8nMailer() )->send(
 			'a@example.com',
 			'Subject',
 			'<p>Hi</p>',
@@ -122,10 +123,33 @@ class CapsAndSummaryTest extends TestCase {
 		);
 
 		$this->assertTrue( $sent );
-		$body = json_decode( $this->requests[0]['args']['body'], true );
-		$this->assertSame( 'lotfi@oldev.site', $body['sender']['email'] );
-		$this->assertSame( base64_encode( 'PDF' ), $body['attachment'][0]['content'] );
-		$this->assertSame( 'test-key', $this->requests[0]['args']['headers']['api-key'] );
+		$raw  = $this->requests[0]['args']['body'];
+		$body = json_decode( $raw, true );
+		$this->assertSame( 'mail.send', $body['type'] );
+		$this->assertSame( 'a@example.com', $body['data']['to'] );
+		$this->assertSame( base64_encode( 'PDF' ), $body['data']['attachment']['content'] );
+		$this->assertSame( 'sha256=' . hash_hmac( 'sha256', $raw, 'test-hmac-secret' ), $this->requests[0]['args']['headers']['X-SHR-Signature'] );
+	}
+
+	public function test_n8n_mail_reports_failure_on_an_error_answer(): void {
+		$this->env( 'SHR_N8N_LEADS_URL', 'https://n8n.example.org/webhook/health-lead' );
+		$this->env( 'SHR_HMAC_SECRET', 'test-hmac-secret' );
+		$this->http['webhook/health-lead'] = $this->http_response( 401, '{"ok":false}' );
+
+		$this->assertFalse( ( new \Oldev\HealthReport\Mail\N8nMailer() )->send( 'a@example.com', 'Subject', '<p>Hi</p>' ) );
+	}
+
+	public function test_the_daily_cap_stops_mail_before_n8n_is_called(): void {
+		$this->env( 'SHR_N8N_LEADS_URL', 'https://n8n.example.org/webhook/health-lead' );
+		$this->env( 'SHR_HMAC_SECRET', 'test-hmac-secret' );
+		$this->env( 'SHR_DAILY_EMAIL_CAP', '1' );
+		$this->http['webhook/health-lead'] = $this->http_response( 200, '{"ok":true}' );
+		$service                           = new MailService( new \Oldev\HealthReport\Mail\N8nMailer() );
+
+		$this->assertTrue( $service->send( 'a@example.com', 's', 'b' ) );
+		$this->assertFalse( $service->send( 'b@example.com', 's', 'b' ) );
+
+		$this->assertCount( 1, $this->requests );
 	}
 
 	public function test_ai_runs_when_enabled_and_uses_the_model_from_the_environment(): void {
