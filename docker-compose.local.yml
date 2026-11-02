@@ -1,0 +1,67 @@
+# Local additions: published ports, a local n8n and the test tools.
+# docker compose -f docker-compose.yml -f docker-compose.local.yml --env-file .env up -d --build
+services:
+  wordpress:
+    ports:
+      - "127.0.0.1:18081:80"
+    environment:
+      SHR_TRUSTED_PROXY_HOPS: "0"
+      SHR_WORKER_INTERVAL: "2"
+
+  scanner:
+    ports:
+      - "127.0.0.1:18082:8080"
+
+  n8n:
+    image: n8nio/n8n:2.45.7
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:18083:5678"
+    environment:
+      N8N_ENCRYPTION_KEY: ${N8N_LOCAL_ENCRYPTION_KEY:?set N8N_LOCAL_ENCRYPTION_KEY}
+      N8N_SECURE_COOKIE: "false"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+      N8N_RUNNERS_ENABLED: "true"
+      GENERIC_TIMEZONE: UTC
+      WEBHOOK_URL: http://n8n:5678/
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n:/import:ro
+      - ./.local/n8n:/local:ro
+
+  testdb:
+    image: mariadb:11.8.9
+    profiles: ["test"]
+    environment:
+      MARIADB_DATABASE: wp_tests
+      MARIADB_USER: wp_tests
+      MARIADB_PASSWORD: wp_tests
+      MARIADB_RANDOM_ROOT_PASSWORD: "1"
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  tools:
+    build:
+      context: .
+      dockerfile: docker/tools/Dockerfile
+    profiles: ["test"]
+    depends_on:
+      testdb:
+        condition: service_healthy
+    working_dir: /app
+    environment:
+      WP_TESTS_DB_HOST: testdb
+      WP_TESTS_DB_NAME: wp_tests
+      WP_TESTS_DB_USER: wp_tests
+      WP_TESTS_DB_PASSWORD: wp_tests
+    volumes:
+      - ./wordpress/plugin/oldev-health-report:/app
+
+volumes:
+  n8n_data:

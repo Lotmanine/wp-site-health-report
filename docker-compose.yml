@@ -1,0 +1,117 @@
+# Production stack for Coolify. Only the wordpress service gets a domain. See DEPLOY.md.
+name: healthreport
+
+services:
+  db:
+    image: mariadb:11.8.9
+    restart: unless-stopped
+    mem_limit: 256m
+    command:
+      - --innodb-buffer-pool-size=48M
+      - --innodb-log-file-size=16M
+      - --performance-schema=OFF
+      - --max-connections=30
+      - --skip-name-resolve
+    environment:
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wordpress
+      MARIADB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+      MARIADB_RANDOM_ROOT_PASSWORD: "1"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  wordpress:
+    build:
+      context: .
+      dockerfile: docker/wordpress/Dockerfile
+    restart: unless-stopped
+    mem_limit: 512m
+    depends_on:
+      db:
+        condition: service_healthy
+      scanner:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+      WORDPRESS_CONFIG_EXTRA: |
+        define( 'WP_HOME', getenv( 'WP_HOME' ) );
+        define( 'WP_SITEURL', getenv( 'WP_HOME' ) );
+        define( 'DISABLE_WP_CRON', true );
+        define( 'DISALLOW_FILE_EDIT', true );
+        define( 'WP_POST_REVISIONS', 3 );
+      WP_HOME: ${WP_HOME:?set WP_HOME}
+      WP_ADMIN_USER: ${WP_ADMIN_USER:?set WP_ADMIN_USER}
+      WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD:?set WP_ADMIN_PASSWORD}
+      WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL:?set WP_ADMIN_EMAIL}
+      SHR_HMAC_SECRET: ${SHR_HMAC_SECRET:?set SHR_HMAC_SECRET}
+      SHR_APP_SECRET: ${SHR_APP_SECRET:?set SHR_APP_SECRET}
+      SHR_N8N_WEBHOOK_URL: ${SHR_N8N_WEBHOOK_URL:?set SHR_N8N_WEBHOOK_URL}
+      SHR_CALLBACK_BASE: ${SHR_CALLBACK_BASE:-}
+      SHR_SCANNER_URL: ${SHR_SCANNER_URL:?set SHR_SCANNER_URL}
+      SHR_TURNSTILE_SITE_KEY: ${SHR_TURNSTILE_SITE_KEY:?set SHR_TURNSTILE_SITE_KEY}
+      SHR_TURNSTILE_SECRET_KEY: ${SHR_TURNSTILE_SECRET_KEY:?set SHR_TURNSTILE_SECRET_KEY}
+      SHR_TRUSTED_PROXY_HOPS: ${SHR_TRUSTED_PROXY_HOPS:-1}
+      SHR_LIMIT_IP_HOUR: ${SHR_LIMIT_IP_HOUR:-5}
+      SHR_LIMIT_IP_DAY: ${SHR_LIMIT_IP_DAY:-20}
+      SHR_DOMAIN_COOLDOWN_MINUTES: ${SHR_DOMAIN_COOLDOWN_MINUTES:-360}
+      SHR_DAILY_SCAN_CAP: ${SHR_DAILY_SCAN_CAP:-100}
+      SHR_DAILY_EMAIL_CAP: ${SHR_DAILY_EMAIL_CAP:-50}
+      SHR_LIMIT_EMAIL_ADDRESS_DAY: ${SHR_LIMIT_EMAIL_ADDRESS_DAY:-3}
+      SHR_DAILY_AI_CAP: ${SHR_DAILY_AI_CAP:-25}
+      SHR_AI_MODEL: ${SHR_AI_MODEL:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      SHR_MAIL_LOG_DIR: /tmp/shr-mail
+    volumes:
+      - wp_data:/var/www/html
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/shr-ready && curl -fs -o /dev/null http://localhost/"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
+
+  scanner:
+    build:
+      context: .
+      dockerfile: docker/scanner/Dockerfile
+    restart: unless-stopped
+    mem_limit: 160m
+    environment: &scanner_env
+      APP_KEY: ${SCANNER_APP_KEY:?set SCANNER_APP_KEY}
+      SCANNER_API_KEY: ${SCANNER_API_KEY:?set SCANNER_API_KEY}
+    volumes:
+      - scanner_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "-o", "/dev/null", "http://localhost:8080/up"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  scanner-worker:
+    build:
+      context: .
+      dockerfile: docker/scanner/Dockerfile
+    restart: unless-stopped
+    mem_limit: 128m
+    user: "33:33"
+    command: ["php", "artisan", "queue:work", "--sleep=2", "--tries=2", "--timeout=90", "--memory=96", "--max-time=3600"]
+    depends_on:
+      scanner:
+        condition: service_healthy
+    environment: *scanner_env
+    volumes:
+      - scanner_data:/data
+
+volumes:
+  db_data:
+  wp_data:
+  scanner_data:
