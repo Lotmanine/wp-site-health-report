@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+.local/
+.remember/
+.claude/
+vendor/
+node_modules/
+test-results/
+playwright-report/
+*.log
+.phpunit.result.cache
+.phpunit.cache/
+.phpcs-cache
+*.sqlite
+scanner/storage/*.key

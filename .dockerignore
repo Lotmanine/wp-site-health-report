@@ -1,0 +1,9 @@
+.git
+.env
+.local
+**/vendor
+**/node_modules
+tests/e2e
+docs
+scanner/tests
+wordpress/plugin/oldev-health-report/tests
