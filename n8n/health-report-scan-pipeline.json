@@ -1,0 +1,743 @@
+{
+  "id": "health-report-scan",
+  "name": "Health Report - Scan Pipeline",
+  "nodes": [
+    {
+      "id": "19964013-6dee-4291-aeec-1b005764bfc9",
+      "name": "Receive Signed Job",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "shr-scan",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "webhookId": "a7590acf-c149-4b90-9bde-4528916056a0"
+    },
+    {
+      "id": "538a27a7-4275-476c-966c-3ac514ba06c8",
+      "name": "Compute Job Signature",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ],
+      "parameters": {
+        "action": "hmac",
+        "binaryData": true,
+        "binaryPropertyName": "data",
+        "type": "SHA256",
+        "dataPropertyName": "expected_signature",
+        "encoding": "hex"
+      },
+      "credentials": {}
+    },
+    {
+      "id": "72aa7ef2-6ccb-47f6-8bc2-550a280df548",
+      "name": "Verify Job",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const item = $input.first();\nconst req = item.json;\nconst headers = req.headers || {};\nconst deny = (reason) => [{ json: { valid: false, reason } }];\nconst received = String(headers['x-shr-signature'] || '').replace(/^sha256=/, '').trim().toLowerCase();\nconst expected = String(req.expected_signature || '').toLowerCase();\n// Constant-time comparison. The crypto module is not available in Code nodes on this instance.\nlet diff = received.length ^ expected.length;\nfor (let i = 0; i < expected.length; i++) {\n  diff |= (received.charCodeAt(i) || 0) ^ expected.charCodeAt(i);\n}\nif (!expected || diff !== 0) return deny('bad_signature');\nlet job = req.body;\nif (typeof job === 'string') {\n  try { job = JSON.parse(job); } catch (e) { return deny('bad_json'); }\n}\nif (!job || !job.scan_id) {\n  try { job = JSON.parse(Buffer.from(item.binary.data.data, 'base64').toString('utf8')); } catch (e) { return deny('bad_json'); }\n}\nif (job.type !== 'scan.job' || job.v !== 1) return deny('bad_message');\nconst now = Math.floor(Date.now() / 1000);\nif (Math.abs(now - Number(job.issued_at)) > 300) return deny('stale');\nconst store = $getWorkflowStaticData('global');\nstore.nonces = store.nonces || {};\nfor (const key of Object.keys(store.nonces)) {\n  if (store.nonces[key] < now) delete store.nonces[key];\n}\nif (!/^[0-9a-f]{32}$/.test(String(job.nonce)) || store.nonces[job.nonce]) return deny('replayed');\nstore.nonces[job.nonce] = now + 600;\nreturn [{ json: { valid: true, scan_id: job.scan_id, url: job.url, domain: job.domain, callback_url: job.callback_url, scanner_url: job.scanner_url } }];"
+      }
+    },
+    {
+      "id": "c0a3f2cf-a9f6-48b0-92c5-a0b8c998885f",
+      "name": "Job Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.valid }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "440dd93f-f6e9-4d19-8f1d-960340b8998e",
+      "name": "Respond Accepted",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        880,
+        200
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{ \"accepted\": true }",
+        "options": {
+          "responseCode": 202
+        }
+      }
+    },
+    {
+      "id": "7458e837-e4b5-4a95-a284-cc4a956da4f7",
+      "name": "Respond Rejected",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        880,
+        520
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{ \"accepted\": false }",
+        "options": {
+          "responseCode": 401
+        }
+      }
+    },
+    {
+      "id": "67af49cc-b3c0-4ed9-940e-a5306d8f2e94",
+      "name": "Create Scanner Job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $(\"Verify Job\").first().json.scanner_url }}/api/v1/scans",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ scan_ref: $(\"Verify Job\").first().json.scan_id, url: $(\"Verify Job\").first().json.url }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "credentials": {},
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "5d43f9b7-76bb-4263-b830-c91dd039d571",
+      "name": "Wait For Scanner",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1320,
+        -60
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 5,
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "bea97964-1d3b-480b-834c-d793572f8698",
+      "name": "Get Scanner Result",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1540,
+        -60
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $(\"Verify Job\").first().json.scanner_url }}/api/v1/scans/{{ $(\"Create Scanner Job\").first().json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "credentials": {},
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "fc1f8727-d05b-4a24-a0c3-b32106af53f8",
+      "name": "Check Scanner Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        -60
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const r = $input.first().json;\nconst job = $(\"Verify Job\").first().json;\nif (r.status === 'complete') return [{ json: { done: true, source: 'scanner', result: r.result } }];\nif (r.status === 'failed') return [{ json: { done: true, source: 'scanner', error: r.error || 'scanner_failed' } }];\nif ($runIndex >= 24) return [{ json: { done: true, source: 'scanner', error: 'scanner_timeout' } }];\nreturn [{ json: { done: false, id: r.id, scanner_url: job.scanner_url } }];"
+      }
+    },
+    {
+      "id": "b75bd85e-9f00-4968-bb51-cd5efbdd091d",
+      "name": "Scanner Finished?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1980,
+        -60
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.done }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "78679314-d8cf-45e6-936c-d327544f4d56",
+      "name": "Collect Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2200,
+        300
+      ],
+      "parameters": {
+        "mode": "append",
+        "numberInputs": 3
+      }
+    },
+    {
+      "id": "d1b237b1-2c4d-4ca0-a58c-f853267fcfec",
+      "name": "Scanner Unavailable",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        140
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const e = $input.first().json;\nconst code = String((e.error && e.error.message) || e.message || '');\nreturn [{ json: { done: true, source: 'scanner', error: /422/.test(code) ? 'blocked_target' : 'scanner_unavailable' } }];"
+      }
+    },
+    {
+      "id": "b77536d1-a8e3-4a3c-94ca-29e7ffa81d9c",
+      "name": "PageSpeed Insights",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1100,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://www.googleapis.com/pagespeedonline/v5/runPagespeed",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $(\"Verify Job\").first().json.url }}"
+            },
+            {
+              "name": "strategy",
+              "value": "mobile"
+            },
+            {
+              "name": "category",
+              "value": "performance"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "credentials": {},
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "1f3806db-50d0-485c-8871-b42423457c8f",
+      "name": "Extract PageSpeed Metrics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const r = $input.first().json;\nconst audits = (r.lighthouseResult && r.lighthouseResult.audits) || null;\nconst category = r.lighthouseResult && r.lighthouseResult.categories && r.lighthouseResult.categories.performance;\nif (!audits || !category) {\n  const message = (r.error && (r.error.message || r.error)) || 'pagespeed_unavailable';\n  return [{ json: { source: 'pagespeed', pagespeed: { error: String(message).slice(0, 180) } } }];\n}\nconst num = (key) => Number((audits[key] && audits[key].numericValue) || 0);\nreturn [{ json: { source: 'pagespeed', pagespeed: { score: Math.round(category.score * 100), lcp_ms: Math.round(num('largest-contentful-paint')), cls: Math.round(num('cumulative-layout-shift') * 1000) / 1000, tbt_ms: Math.round(num('total-blocking-time')), error: null } } }];"
+      }
+    },
+    {
+      "id": "0b312c0b-cf01-43c2-9ee4-dba60da9d71c",
+      "name": "Build DNS Queries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        520
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const domain = $(\"Verify Job\").first().json.domain;\nconst selectors = ['default', 'google', 'selector1', 'selector2', 'k1', 'k2', 's1', 's2', 'mail', 'dkim', 'zmail', 'zmail1', 'brevo1', 'brevo2', 'mandrill', 'mxvault', 'smtp', 'protonmail'];\nconst out = [{ json: { kind: 'spf', name: domain } }, { json: { kind: 'dmarc', name: '_dmarc.' + domain } }];\nfor (const s of selectors) out.push({ json: { kind: 'dkim', selector: s, name: s + '._domainkey.' + domain } });\nreturn out;"
+      }
+    },
+    {
+      "id": "cd2fee4a-b1e6-481f-bee9-f8b4a81c870f",
+      "name": "DNS over HTTPS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1320,
+        520
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://dns.google/resolve",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $json.name }}"
+            },
+            {
+              "name": "type",
+              "value": "TXT"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000,
+          "batching": {
+            "batch": {
+              "batchSize": 5,
+              "batchInterval": 200
+            }
+          }
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "7e394f3a-c8f7-4221-9449-cb76560228be",
+      "name": "Summarize DNS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        520
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const queries = $(\"Build DNS Queries\").all();\nconst answers = $input.all();\nconst dns = {\n  spf: { found: false, record: null, error: null },\n  dmarc: { found: false, record: null, error: null },\n  dkim: { found: false, selectors: [], checked: 0, error: null },\n};\nconst texts = (a) => (a.Answer || []).filter((r) => r.type === 16).map((r) => String(r.data).replace(/\"\\s*\"/g, '').replace(/^\"|\"$/g, ''));\nlet dkimErrors = 0;\nanswers.forEach((item, i) => {\n  const q = queries[i].json;\n  const a = item.json;\n  const failed = a.error !== undefined || a.Status === undefined || a.Status === 2;\n  if (q.kind === 'dkim') {\n    dns.dkim.checked++;\n    if (failed) { dkimErrors++; return; }\n    if (texts(a).some((t) => /v=DKIM1|(^|;\\s*)p=/i.test(t))) dns.dkim.selectors.push(q.selector);\n    return;\n  }\n  if (failed) { dns[q.kind].error = 'lookup_failed'; return; }\n  const prefix = q.kind === 'spf' ? /^v=spf1/i : /^v=DMARC1/i;\n  const record = texts(a).find((t) => prefix.test(t));\n  if (record) { dns[q.kind].found = true; dns[q.kind].record = record.slice(0, 380); }\n});\ndns.dkim.found = dns.dkim.selectors.length > 0;\nif (dkimErrors === dns.dkim.checked) dns.dkim.error = 'lookup_failed';\nreturn [{ json: { source: 'dns', dns } }];"
+      }
+    },
+    {
+      "id": "bf45dc27-e468-4c7a-b1fd-2ea7618ab4b5",
+      "name": "Assemble Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const job = $(\"Verify Job\").first().json;\nlet scanner = null, error = 'scanner_failed', pagespeed = { error: 'pagespeed_unavailable' }, dns = {};\nfor (const item of $input.all()) {\n  const j = item.json;\n  if (j.source === 'scanner') { scanner = j.result || null; error = j.error || error; }\n  if (j.source === 'pagespeed') pagespeed = j.pagespeed;\n  if (j.source === 'dns') dns = j.dns;\n}\nlet nonce = '';\nwhile (nonce.length < 32) nonce += Math.floor(Math.random() * 16).toString(16);\nconst payload = {\n  v: 1, type: 'scan.result', scan_id: job.scan_id,\n  status: scanner ? 'complete' : 'failed', error: scanner ? null : error,\n  issued_at: Math.floor(Date.now() / 1000), nonce, scanner, pagespeed, dns,\n};\nreturn [{ json: { payload_json: JSON.stringify(payload), callback_url: job.callback_url } }];"
+      }
+    },
+    {
+      "id": "5b0edb70-eed6-4f8a-bcf6-61c3f0b750e5",
+      "name": "Sign Result",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        300
+      ],
+      "parameters": {
+        "action": "hmac",
+        "type": "SHA256",
+        "value": "={{ $json.payload_json }}",
+        "dataPropertyName": "signature",
+        "encoding": "hex"
+      },
+      "credentials": {}
+    },
+    {
+      "id": "65384206-bb54-4fff-9662-eb26dee323c1",
+      "name": "Post Result To WordPress",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2860,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.callback_url }}",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-SHR-Signature",
+              "value": "=sha256={{ $json.signature }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.payload_json }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "d902958c-d249-446b-bd12-d361168c5b97",
+      "name": "Result Delivery Failed",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        3080,
+        420
+      ],
+      "parameters": {
+        "errorType": "errorMessage",
+        "errorMessage": "WordPress did not accept the scan result after 3 attempts."
+      }
+    }
+  ],
+  "connections": {
+    "Receive Signed Job": {
+      "main": [
+        [
+          {
+            "node": "Compute Job Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Job Signature": {
+      "main": [
+        [
+          {
+            "node": "Verify Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Job": {
+      "main": [
+        [
+          {
+            "node": "Job Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job Valid?": {
+      "main": [
+        [
+          {
+            "node": "Respond Accepted",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Accepted": {
+      "main": [
+        [
+          {
+            "node": "Create Scanner Job",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "PageSpeed Insights",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Build DNS Queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Scanner Job": {
+      "main": [
+        [
+          {
+            "node": "Wait For Scanner",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Scanner Unavailable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait For Scanner": {
+      "main": [
+        [
+          {
+            "node": "Get Scanner Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Scanner Result": {
+      "main": [
+        [
+          {
+            "node": "Check Scanner Status",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Scanner Unavailable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Scanner Status": {
+      "main": [
+        [
+          {
+            "node": "Scanner Finished?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scanner Finished?": {
+      "main": [
+        [
+          {
+            "node": "Collect Results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait For Scanner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Results": {
+      "main": [
+        [
+          {
+            "node": "Assemble Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scanner Unavailable": {
+      "main": [
+        [
+          {
+            "node": "Collect Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PageSpeed Insights": {
+      "main": [
+        [
+          {
+            "node": "Extract PageSpeed Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PageSpeed Metrics": {
+      "main": [
+        [
+          {
+            "node": "Collect Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Build DNS Queries": {
+      "main": [
+        [
+          {
+            "node": "DNS over HTTPS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DNS over HTTPS": {
+      "main": [
+        [
+          {
+            "node": "Summarize DNS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize DNS": {
+      "main": [
+        [
+          {
+            "node": "Collect Results",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Assemble Result": {
+      "main": [
+        [
+          {
+            "node": "Sign Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign Result": {
+      "main": [
+        [
+          {
+            "node": "Post Result To WordPress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Result To WordPress": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Result Delivery Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "timezone": "UTC",
+    "executionTimeout": 300
+  }
+}

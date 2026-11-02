@@ -1,0 +1,58 @@
+{
+  "id": "health-report-error-alert",
+  "name": "Health Report - Error Alert",
+  "nodes": [
+    {
+      "id": "9ed7b36d-fc29-40e9-a054-34e59fae53b6",
+      "name": "Pipeline Failed",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "8f08689d-20fe-4d21-95db-be250445e1d8",
+      "name": "Alert Operator",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "REPLACE_WITH_TELEGRAM_CHAT_ID",
+        "text": "=Health Report pipeline failed\nWorkflow: {{ $json.workflow.name }}\nNode: {{ $json.execution.lastNodeExecuted }}\nExecution: {{ $json.execution.id }}\nError: {{ ($json.execution.error.message || \"\").slice(0, 300) }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    }
+  ],
+  "connections": {
+    "Pipeline Failed": {
+      "main": [
+        [
+          {
+            "node": "Alert Operator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "timezone": "UTC",
+    "executionTimeout": 300
+  }
+}
