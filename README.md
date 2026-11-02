@@ -29,7 +29,7 @@ flowchart TD
 | Part | Path | Job |
 |---|---|---|
 | WordPress plugin | `wordpress/plugin/oldev-health-report` | Intake, limits, queue, scoring, reports, dashboard, admin screen |
-| Block theme | `wordpress/theme/oldev-health` | Landing page and layout |
+| Block theme | `wordpress/theme/oldev-health` | Landing page and layout in the oldev.site design system, light and dark |
 | Scanner | `scanner` | Laravel service for outbound requests to untrusted hosts |
 | n8n workflows | `n8n` | Orchestration, retries, signed result, alert |
 | End-to-end tests | `tests/e2e` | Playwright, desktop and phone |
@@ -58,13 +58,18 @@ Design, data model, message contracts and the threat model are in [PLAN.md](PLAN
 
 ## Screenshots
 
-| Landing | Report on phone | Dashboard on phone |
-|---|---|---|
-| ![Landing](docs/screenshots/landing-phone.png) | ![Report](docs/screenshots/report-phone.png) | ![Dashboard](docs/screenshots/dashboard-phone.png) |
+| Landing | Landing, dark | Report on phone | Dashboard on phone |
+|---|---|---|---|
+| ![Landing](docs/screenshots/landing-phone.png) | ![Landing in dark mode](docs/screenshots/landing-dark-phone.png) | ![Report](docs/screenshots/report-phone.png) | ![Dashboard](docs/screenshots/dashboard-phone.png) |
 
 ![Admin screen](docs/screenshots/admin-desktop-light.png)
 
 A real report for `oldev.site` is in [docs/sample-report](docs/sample-report).
+
+The theme follows the oldev.site design system: the same colour tokens for light and dark, Outfit and
+JetBrains Mono, buttons, cards, header and footer. It defaults to the visitor's system preference and
+remembers the toggle. Both fonts are self-hosted as single latin variable files (OFL licences next to
+them): the site's CSP allows fonts only from its own origin, and it saves a third-party connection.
 
 ## Run it locally
 

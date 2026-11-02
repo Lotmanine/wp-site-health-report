@@ -11,6 +11,46 @@ test( 'landing page explains the service and fits the screen', async ( { page },
 	await page.screenshot( { path: shot( 'landing-' + info.project.name ), fullPage: true } );
 } );
 
+test( 'the menu leads to oldev.site and the title has no dashes', async ( { page }, info ) => {
+	await page.goto( '/' );
+	await expect( page ).toHaveTitle( 'Website Health Report | Passive website health checks' );
+	expect( await page.title() ).not.toMatch( /[\u2013\u2014]/ );
+
+	const nav = page.getByRole( 'navigation', { name: 'Primary' } );
+	if ( 'phone' === info.project.name ) {
+		await nav.getByLabel( 'Open menu' ).click();
+	}
+	await expect( nav.getByRole( 'link', { name: 'Visit oldev.site' } ).filter( { visible: true } ) ).toHaveAttribute( 'href', 'https://oldev.site/' );
+	await expect( nav.getByRole( 'link', { name: 'WordPress Audit' } ).filter( { visible: true } ) ).toHaveAttribute( 'href', 'https://oldev.site/wordpress-audit/' );
+	await expect( nav.getByRole( 'link', { name: 'Contact' } ).filter( { visible: true } ) ).toHaveAttribute( 'href', 'https://oldev.site/contact' );
+} );
+
+test( 'dark mode follows the system and the toggle remembers the choice', async ( { browser }, info ) => {
+	const { viewport, deviceScaleFactor, isMobile, hasTouch, userAgent, baseURL } = info.project.use;
+	const context = await browser.newContext( {
+		viewport,
+		deviceScaleFactor,
+		isMobile,
+		hasTouch,
+		userAgent,
+		colorScheme: 'dark',
+		baseURL: baseURL || process.env.E2E_BASE_URL || 'http://localhost:18081',
+	} );
+	const page = await context.newPage();
+	await page.goto( '/' );
+	await expect( page.locator( 'html' ) ).toHaveClass( /\bdark\b/ );
+	expect( await noSidewaysScroll( page ) ).toBe( true );
+	await page.screenshot( { path: shot( 'landing-dark-' + info.project.name ), fullPage: true } );
+
+	const toggle = page.getByRole( 'button', { name: 'Toggle dark mode' } );
+	await toggle.click();
+	await expect( page.locator( 'html' ) ).not.toHaveClass( /\bdark\b/ );
+	await expect( toggle ).toHaveAttribute( 'aria-pressed', 'false' );
+	await page.reload();
+	await expect( page.locator( 'html' ) ).not.toHaveClass( /\bdark\b/ );
+	await context.close();
+} );
+
 test( 'the form needs the consent box', async ( { page } ) => {
 	await page.goto( '/' );
 	await page.getByLabel( 'Website address' ).fill( 'oldev.site' );
