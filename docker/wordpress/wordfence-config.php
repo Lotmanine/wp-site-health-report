@@ -26,7 +26,7 @@ $settings = array(
 	'other_hideWPVersion'            => 1,
 	'other_blockBadPOST'             => 1,
 	'disableCodeExecutionUploads'    => 1,
-	// Rate limits. The n8n callbacks come from this server and are allowlisted below.
+	// Rate limits. The n8n callbacks are a few requests per scan, well under these, and are checked by HMAC.
 	'maxGlobalRequests'              => 480,
 	'maxGlobalRequests_action'       => 'throttle',
 	'maxRequestsCrawlers'            => 120,
@@ -38,10 +38,12 @@ $settings = array(
 	'max404Humans'                   => 60,
 	'max404Humans_action'            => 'throttle',
 	'blockedTime'                    => 300,
-	// Traefik sits in front and appends the visitor address to X-Forwarded-For.
-	'howGetIPs'                      => 'HTTP_X_FORWARDED_FOR',
-	'howGetIPs_trusted_proxies'      => "10.0.0.0/8\n172.16.0.0/12\n192.168.0.0/16",
-	'whitelisted'                    => '76.13.63.48',
+	// Apache's mod_remoteip already sets REMOTE_ADDR to the visitor address, trusting X-Forwarded-For only
+	// from the networks this container is attached to (see shr-remoteip.php). No header is trusted here.
+	'howGetIPs'                      => 'REMOTE_ADDR',
+	'howGetIPs_trusted_proxies'      => '',
+	// No address bypasses the firewall. This also clears an allowlist left by an earlier version.
+	'whitelisted'                    => '',
 	'scheduledScansEnabled'          => 1,
 	'alertEmails'                    => (string) getenv( 'WP_ADMIN_EMAIL' ),
 );

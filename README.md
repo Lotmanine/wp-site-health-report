@@ -48,8 +48,8 @@ Design, data model, message contracts and the threat model are in [PLAN.md](PLAN
 - Admin screen for queue health, the abuse log and daily usage.
 - 30-day retention job, delete-this-report on every report and delete-my-data on the dashboard. Erasing an
   address also deletes its lead row.
-- Wordfence firewall in extended protection, set up from code on every boot, reading the visitor address from
-  the proxy's X-Forwarded-For and trusting only private proxy ranges.
+- Wordfence firewall in extended protection, set up from code on every boot. Apache trusts X-Forwarded-For only
+  from the networks the container is attached to, and no address bypasses the firewall.
 
 ## Safety
 

@@ -98,8 +98,10 @@ workflow has a placeholder chat ID. The copy on the instance has the real one.
 Every boot installs Wordfence 9.0.2 (`WORDFENCE_VERSION` overrides it) and applies
 `docker/wordpress/wordfence-config.php`. The firewall runs in extended protection: Apache sets
 `auto_prepend_file` to a loader outside the web root, so it runs before WordPress on every PHP request.
-Wordfence reads the visitor address from `X-Forwarded-For` and trusts only the private ranges Docker and
-Traefik use. Brute force limits, rate limits and blocking of `admin`-style usernames are set there too, and
+Visitor addresses come from Apache's mod_remoteip: at container start `docker/wordpress/shr-remoteip.php`
+trusts `X-Forwarded-For` only from the networks the container is attached to, where the Coolify proxy
+connects from, instead of every private range. WordPress and Wordfence then read `REMOTE_ADDR`, and no address
+is allowlisted in the firewall. The n8n callbacks are checked by their HMAC signature. Brute force limits, rate limits and blocking of `admin`-style usernames are set there too, and
 settings changed in wp-admin for those keys are reset on the next boot.
 
 Two steps are left to the site owner in wp-admin:
