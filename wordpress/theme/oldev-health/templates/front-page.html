@@ -1,0 +1,51 @@
+<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+
+<!-- wp:group {"tagName":"main","style":{"spacing":{"padding":{"top":"48px","bottom":"24px"}}},"layout":{"type":"constrained"}} -->
+<main class="wp-block-group" style="padding-top:48px;padding-bottom:24px"><!-- wp:heading {"level":1} -->
+<h1 class="wp-block-heading">How healthy is your website?</h1>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"textColor":"muted","fontSize":"large"} -->
+<p class="has-muted-color has-text-color has-large-font-size">Enter an address to get a scored report on security headers, the TLS certificate, search basics, email authentication and performance, with a ranked list of what to fix first.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:shr/scan-form /-->
+
+<!-- wp:group {"style":{"spacing":{"margin":{"top":"40px"}}},"layout":{"type":"constrained"}} -->
+<div class="wp-block-group" style="margin-top:40px"><!-- wp:heading -->
+<h2 class="wp-block-heading">What gets checked</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list -->
+<ul class="wp-block-list"><!-- wp:list-item -->
+<li>Certificate validity and expiry</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li>Security headers such as HSTS and Content-Security-Policy</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li>WordPress fingerprint and version exposure</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li>Page title, meta description, canonical link, robots.txt and sitemap</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li>SPF, DKIM and DMARC records for your domain</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li>PageSpeed Insights performance on mobile</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph -->
+<p>Scans are passive. They read what any visitor can already see. They do not scan ports, test passwords or attempt to exploit anything. Reports are deleted after 30 days.</p>
+<!-- /wp:paragraph --></div>
+<!-- /wp:group --></main>
+<!-- /wp:group -->
+
+<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->

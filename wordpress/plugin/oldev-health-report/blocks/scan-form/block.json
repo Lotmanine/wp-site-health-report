@@ -1,0 +1,15 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "shr/scan-form",
+	"title": "Website scan form",
+	"category": "widgets",
+	"icon": "search",
+	"description": "URL form that starts a website health scan.",
+	"textdomain": "oldev-health-report",
+	"supports": { "html": false },
+	"editorScript": "shr-editor",
+	"viewScript": "shr-scan-form",
+	"style": "shr-app",
+	"render": "file:./render.php"
+}

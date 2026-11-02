@@ -1,0 +1,13 @@
+parameters:
+    level: 6
+    paths:
+        - src
+        - oldev-health-report.php
+    scanFiles:
+        - stubs/third-party.php
+        - vendor/woocommerce/action-scheduler/functions.php
+    scanDirectories:
+        - vendor/woocommerce/action-scheduler/classes
+    bootstrapFiles:
+        - stubs/constants.php
+    treatPhpDocTypesAsCertain: false

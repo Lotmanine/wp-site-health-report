@@ -1,0 +1,15 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "shr/dashboard",
+	"title": "Scan dashboard",
+	"category": "widgets",
+	"icon": "dashboard",
+	"description": "Magic-link dashboard with scan history and comparison.",
+	"textdomain": "oldev-health-report",
+	"supports": { "html": false },
+	"editorScript": "shr-editor",
+	"viewScript": "shr-dashboard",
+	"style": "shr-app",
+	"render": "file:./render.php"
+}

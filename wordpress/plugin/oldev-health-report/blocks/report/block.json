@@ -1,0 +1,15 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "shr/report",
+	"title": "Website health report",
+	"category": "widgets",
+	"icon": "chart-bar",
+	"description": "Shows the report for the signed URL.",
+	"textdomain": "oldev-health-report",
+	"supports": { "html": false },
+	"editorScript": "shr-editor",
+	"viewScript": "shr-report",
+	"style": "shr-app",
+	"render": "file:./render.php"
+}

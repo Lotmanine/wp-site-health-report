@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.6/phpunit.xsd"
+	bootstrap="tests/bootstrap.php"
+	colors="true"
+	convertDeprecationsToExceptions="false">
+	<testsuites>
+		<testsuite name="plugin">
+			<directory suffix="Test.php">tests</directory>
+		</testsuite>
+	</testsuites>
+	<php>
+		<env name="SHR_HMAC_SECRET" value="test-hmac-secret-not-real"/>
+		<env name="SHR_APP_SECRET" value="test-app-secret-not-real"/>
+		<env name="SHR_TURNSTILE_SECRET_KEY" value="test-turnstile-secret"/>
+		<env name="SHR_N8N_WEBHOOK_URL" value="https://n8n.test.invalid/webhook/shr-scan"/>
+	</php>
+</phpunit>
