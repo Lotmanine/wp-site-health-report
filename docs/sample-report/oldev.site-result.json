@@ -1,0 +1,89 @@
+{
+    "url": "https://oldev.site/",
+    "domain": "oldev.site",
+    "status": "complete",
+    "overall_score": "75",
+    "grade": "C",
+    "category_scores": {
+        "security": 33,
+        "seo": 100,
+        "tls": 100,
+        "email": 100
+    },
+    "summary": "oldev.site scored 75 out of 100, grade C. The strongest area is Email authentication at 100 and the weakest is Security headers at 33. There are 6 items to fix. Start here: Send Strict-Transport-Security with a max-age of at least 15552000 once HTTPS is stable.",
+    "summary_source": "rules",
+    "created_at": "2026-11-02 03:53:18",
+    "completed_at": "2026-11-02 03:53:32",
+    "result": {
+        "v": 1,
+        "type": "scan.result",
+        "status": "complete",
+        "error": null,
+        "issued_at": 1793591612,
+        "scanner": {
+            "final_url": "https://oldev.site/",
+            "status_code": 200,
+            "redirects": [],
+            "https": true,
+            "truncated": false,
+            "tls": {
+                "valid": true,
+                "days_remaining": 89,
+                "expires_at": "2027-01-30T23:39:09+00:00",
+                "issuer": "Let's Encrypt",
+                "error": null
+            },
+            "headers": {
+                "server": "cloudflare"
+            },
+            "wordpress": {
+                "detected": false,
+                "signals": [],
+                "version": null
+            },
+            "robots": {
+                "found": true,
+                "status": 200,
+                "disallow_all": false,
+                "sitemaps": [
+                    "https://oldev.site/sitemap.xml"
+                ]
+            },
+            "sitemap": {
+                "found": true,
+                "url": "https://oldev.site/sitemap.xml"
+            },
+            "meta": {
+                "title": "OLDEV by Lotfi Otmanine, Senior WordPress Developer",
+                "description": "Senior WordPress developer for WooCommerce stores and business-critical sites: custom plugins, speed, security and SEO. Custom quote within 24 hours.",
+                "canonical": "https://oldev.site/",
+                "robots": "index, follow"
+            }
+        },
+        "pagespeed": {
+            "error": "Try spacing your requests out using the batching settings under 'Options'"
+        },
+        "dns": {
+            "spf": {
+                "found": true,
+                "record": "v=spf1 include:zohomail.com -all",
+                "error": null
+            },
+            "dmarc": {
+                "found": true,
+                "record": "v=DMARC1; p=reject; sp=reject; rua=mailto:dmarc@oldev.site,mailto:rua@dmarc.brevo.com; ruf=mailto:dmarc@oldev.site; fo=1; adkim=r; aspf=r",
+                "error": null
+            },
+            "dkim": {
+                "found": true,
+                "selectors": [
+                    "zmail1",
+                    "brevo1",
+                    "brevo2"
+                ],
+                "checked": 18,
+                "error": null
+            }
+        }
+    }
+}
