@@ -21,8 +21,9 @@ flowchart TD
     N --> D[DNS over HTTPS: SPF, DKIM, DMARC]
     N -->|HMAC signed result| WP
     WP --> C[Claude API summary, capped, with rule-based fallback]
-    WP --> B[Brevo: PDF report, only with consent]
-    WP --> F[FluentCRM contact and tags]
+    WP -->|HMAC signed lead and mail messages, outbox with retries| L[n8n lead workflow]
+    L --> G[Google Sheets: one row per address]
+    L --> B[Brevo SMTP: PDF report and sign-in links]
     N -.->|on failure| A[Telegram alert]
 ```
 
@@ -41,10 +42,14 @@ Design, data model, message contracts and the threat model are in [PLAN.md](PLAN
 - URL form with Turnstile verified on the server and a required ownership consent box.
 - Report at an unguessable signed URL, with scores by category and a ranked fix list.
 - Magic-link dashboard with scan history, rescans and before and after comparison.
-- Optional PDF by email through Brevo, and a FluentCRM contact tagged by findings and consent.
+- Optional PDF by email, and a lead row with score, failed checks and consents, both through a signed n8n
+  webhook. Lead events wait in an outbox table until n8n confirms them, and only the row id goes through the queue.
 - Optional AI summary. The prompt holds only check results this code generated, never text from the scanned page.
 - Admin screen for queue health, the abuse log and daily usage.
-- 30-day retention job, delete-this-report on every report and delete-my-data on the dashboard.
+- 30-day retention job, delete-this-report on every report and delete-my-data on the dashboard. Erasing an
+  address also deletes its lead row.
+- Wordfence firewall in extended protection, set up from code on every boot, reading the visitor address from
+  the proxy's X-Forwarded-For and trusting only private proxy ranges.
 
 ## Safety
 
@@ -94,8 +99,8 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml --env-file .env
 docker compose -f docker-compose.yml -f docker-compose.local.yml --env-file .env restart n8n
 ```
 
-The site is at `http://localhost:18081`. With `BREVO_API_KEY` empty, mail is written to `/tmp/shr-mail` inside
-the WordPress container.
+The site is at `http://localhost:18081`. With `SHR_N8N_LEADS_URL` empty, mail is written to `/tmp/shr-mail`
+inside the WordPress container and lead events stay in the outbox table.
 
 ## Tests
 

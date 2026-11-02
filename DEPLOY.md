@@ -33,7 +33,7 @@ Generate each secret with `openssl rand -hex 32`. Generate `SCANNER_APP_KEY` wit
 | `SCANNER_API_KEY` | Random secret, also used in n8n |
 | `SHR_TURNSTILE_SITE_KEY`, `SHR_TURNSTILE_SECRET_KEY` | From the Turnstile widget in step 3 |
 | `SHR_TRUSTED_PROXY_HOPS` | `1` for Traefik alone. Use `2` if the record is ever proxied by Cloudflare. |
-| `BREVO_API_KEY` | Transactional key. While empty, mail is written to `/tmp/shr-mail` in the container and not sent. |
+| `SHR_N8N_LEADS_URL` | `https://n8n.oldev.site/webhook/health-lead`. While empty, mail is written to `/tmp/shr-mail` in the container and lead events stay queued. |
 | `ANTHROPIC_API_KEY`, `SHR_AI_MODEL` | Optional. With either empty, summaries are rule-based. |
 
 The limits in `.env.example` have working defaults. `SHR_DAILY_EMAIL_CAP` can only lower the cap: the code
@@ -51,26 +51,66 @@ The workflows already exist on `n8n.oldev.site`:
 
 | Workflow | ID | State |
 |---|---|---|
-| Health Report - Scan Pipeline | `hU9lp0gKvTwJh5Ls` | Created, not published |
+| Health Report - Scan Pipeline | `hU9lp0gKvTwJh5Ls` | Published |
 | Health Report - Error Alert | `dzvAY3XW76YWTV15` | Published, runs only when the pipeline fails |
+| Deliverability audit lead workflow | `h3jpKzBdDOGM1k9c` | Published, holds the `health-lead` branch below |
 
-Credentials cannot be created through the n8n MCP tools, so add these by hand:
+Credentials cannot be created through the n8n MCP tools. They exist on the instance:
 
-| Credential | Type | Fields | Attach to nodes |
+| Credential | Type | Fields | Attached to |
 |---|---|---|---|
-| Health Report HMAC | Crypto | Hmac Secret: `SHR_HMAC_SECRET` | Compute Job Signature, Sign Result |
+| Health Report HMAC | Crypto | Hmac Secret: `SHR_HMAC_SECRET` | Compute Job Signature, Sign Result, Health: Compute Signature |
 | Health Report Scanner Key | Header Auth | Name `X-Api-Key`, Value: `SCANNER_API_KEY` | Create Scanner Job, Get Scanner Result |
-| Health Report PageSpeed Key | Query Auth | Name `key`, Value: a Google PageSpeed API key | PageSpeed Insights |
 
-Without a Google key the PageSpeed API answered 429 on every keyless call during testing, so the
-performance category is left out of the score until a key is added.
+If `SHR_HMAC_SECRET` or `SCANNER_API_KEY` changes, update these two credentials too. Every scan failed with
+"The scan could not finish" while the pipeline was unpublished: WordPress got a 404 from the webhook three
+times and marked the scan `dispatch_failed`.
 
-Then publish the pipeline.
+PageSpeed Insights runs without a key on the live pipeline. Keyless calls answered 429 during testing, so the
+performance category is often left out of the score. To add a key, create a Query Auth credential (name `key`,
+value a Google PageSpeed API key), set the PageSpeed Insights node to Generic Credential Type, Query Auth, and
+attach it. `n8n/src` already builds the node that way.
+
+### Lead and mail path
+
+WordPress posts three message types to `SHR_N8N_LEADS_URL`, signed like the scan job (HMAC-SHA256 of the raw
+body in `X-SHR-Signature`, `issued_at` within 300 seconds, a one-time nonce):
+
+| Type | What n8n does |
+|---|---|
+| `lead.upsert` | Appends or updates the row for that address in the Health Check tab of the leads spreadsheet |
+| `lead.erase` | Deletes every row for that address. Sent by delete-my-data and by the 30-day retention job |
+| `mail.send` | Sends the report PDF or a sign-in link from lotfi@oldev.site through the Brevo SMTP credential, with no n8n attribution and the line "This message is sent automatically by Oldev." |
+
+The branch is a separate webhook (`health-lead`) inside the deliverability audit workflow and is not connected
+to the audit path. It answers 401 to a bad, stale or replayed signature. WordPress caps mail at 50 a day before
+sending, and the n8n branch refuses a 51st `mail.send` on the same UTC day as a second guard.
+
+In WordPress, lead events go to the `shr_outbox` table and Action Scheduler delivers them by row id, with
+backoff for up to six attempts. The daily retention job requeues anything that ran out of attempts, so an
+erasure is retried until n8n confirms it.
 
 To rebuild the workflow JSON from `n8n/src`, run `sh scripts/build-workflows.sh`. The exported alert
 workflow has a placeholder chat ID. The copy on the instance has the real one.
 
-## 5. Check the deployment
+## 5. Wordfence
+
+Every boot installs Wordfence 9.0.2 (`WORDFENCE_VERSION` overrides it) and applies
+`docker/wordpress/wordfence-config.php`. The firewall runs in extended protection: Apache sets
+`auto_prepend_file` to a loader outside the web root, so it runs before WordPress on every PHP request.
+Wordfence reads the visitor address from `X-Forwarded-For` and trusts only the private ranges Docker and
+Traefik use. Brute force limits, rate limits and blocking of `admin`-style usernames are set there too, and
+settings changed in wp-admin for those keys are reset on the next boot.
+
+Two steps are left to the site owner in wp-admin:
+
+1. **License.** Wordfence shows "Wordfence installation is incomplete" until a free license is registered under
+   Wordfence, Resume Installation. Without it the firewall has no rules file, so attack patterns are not blocked
+   yet. Brute force protection, rate limiting and two-factor login work without it.
+2. **Two-factor login.** Under Wordfence, Login Security, enrol the admin account with an authenticator app and
+   save the recovery codes. It is available to administrators and not forced on any role.
+
+## 6. Check the deployment
 
 1. `https://health.oldev.site/` loads and the form shows the Turnstile widget.
 2. Run a scan of `https://oldev.site`. The report appears in about a minute.
