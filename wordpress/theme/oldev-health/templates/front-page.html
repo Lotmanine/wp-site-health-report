@@ -1,51 +1,93 @@
-<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+<!-- wp:template-part {"slug":"header","tagName":"header","className":"site-header"} /-->
 
-<!-- wp:group {"tagName":"main","style":{"spacing":{"padding":{"top":"48px","bottom":"24px"}}},"layout":{"type":"constrained"}} -->
-<main class="wp-block-group" style="padding-top:48px;padding-bottom:24px"><!-- wp:heading {"level":1} -->
-<h1 class="wp-block-heading">How healthy is your website?</h1>
-<!-- /wp:heading -->
+<!-- wp:group {"tagName":"main","anchor":"main","className":"site-main","layout":{"type":"default"}} -->
+<main id="main" class="wp-block-group site-main"><!-- wp:group {"tagName":"section","className":"hero","layout":{"type":"default"}} -->
+<section class="wp-block-group hero"><!-- wp:group {"className":"container-site hero-grid","layout":{"type":"default"}} -->
+<div class="wp-block-group container-site hero-grid"><!-- wp:html -->
+<div class="hero-copy">
+	<p class="eyebrow">Free website health check</p>
+	<h1 class="t-hero">How healthy is your website?</h1>
+	<p class="t-lead">Enter an address to get a scored report on security headers, the TLS certificate, search basics, email authentication and performance, with a ranked list of what to fix first.</p>
+	<ul class="hero-points">
+		<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Passive checks only</li>
+		<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Report in about a minute</li>
+		<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Reports deleted after 30 days</li>
+	</ul>
+</div>
+<!-- /wp:html -->
 
-<!-- wp:paragraph {"textColor":"muted","fontSize":"large"} -->
-<p class="has-muted-color has-text-color has-large-font-size">Enter an address to get a scored report on security headers, the TLS certificate, search basics, email authentication and performance, with a ranked list of what to fix first.</p>
-<!-- /wp:paragraph -->
-
-<!-- wp:shr/scan-form /-->
-
-<!-- wp:group {"style":{"spacing":{"margin":{"top":"40px"}}},"layout":{"type":"constrained"}} -->
-<div class="wp-block-group" style="margin-top:40px"><!-- wp:heading -->
-<h2 class="wp-block-heading">What gets checked</h2>
-<!-- /wp:heading -->
-
-<!-- wp:list -->
-<ul class="wp-block-list"><!-- wp:list-item -->
-<li>Certificate validity and expiry</li>
-<!-- /wp:list-item -->
-
-<!-- wp:list-item -->
-<li>Security headers such as HSTS and Content-Security-Policy</li>
-<!-- /wp:list-item -->
-
-<!-- wp:list-item -->
-<li>WordPress fingerprint and version exposure</li>
-<!-- /wp:list-item -->
-
-<!-- wp:list-item -->
-<li>Page title, meta description, canonical link, robots.txt and sitemap</li>
-<!-- /wp:list-item -->
-
-<!-- wp:list-item -->
-<li>SPF, DKIM and DMARC records for your domain</li>
-<!-- /wp:list-item -->
-
-<!-- wp:list-item -->
-<li>PageSpeed Insights performance on mobile</li>
-<!-- /wp:list-item --></ul>
-<!-- /wp:list -->
-
-<!-- wp:paragraph -->
-<p>Scans are passive. They read what any visitor can already see. They do not scan ports, test passwords or attempt to exploit anything. Reports are deleted after 30 days.</p>
-<!-- /wp:paragraph --></div>
-<!-- /wp:group --></main>
+<!-- wp:group {"className":"hero-card card","layout":{"type":"default"}} -->
+<div class="wp-block-group hero-card card"><!-- wp:shr/scan-form /--></div>
+<!-- /wp:group --></div>
+<!-- /wp:group --></section>
 <!-- /wp:group -->
 
-<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->
+<!-- wp:html -->
+<section class="section section-alt" aria-labelledby="checks-title">
+	<div class="container-site">
+		<div class="section-head">
+			<p class="eyebrow">Six categories</p>
+			<h2 class="t-h2" id="checks-title">What gets checked</h2>
+			<p class="t-body">Each category gets a score out of 100. The report ranks every problem it finds, most urgent first.</p>
+		</div>
+		<ul class="check-grid">
+			<li class="card check-card">
+				<span class="icon-tile"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+				<h3 class="t-h3">TLS certificate</h3>
+				<p class="t-small">Certificate validity and expiry</p>
+			</li>
+			<li class="card check-card">
+				<span class="icon-tile"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/></svg></span>
+				<h3 class="t-h3">Security headers</h3>
+				<p class="t-small">Security headers such as HSTS and Content-Security-Policy</p>
+			</li>
+			<li class="card check-card">
+				<span class="icon-tile"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 8-4 4 4 4M16 8l4 4-4 4M14 5l-4 14"/></svg></span>
+				<h3 class="t-h3">WordPress</h3>
+				<p class="t-small">WordPress fingerprint and version exposure</p>
+			</li>
+			<li class="card check-card">
+				<span class="icon-tile"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
+				<h3 class="t-h3">Search basics</h3>
+				<p class="t-small">Page title, meta description, canonical link, robots.txt and sitemap</p>
+			</li>
+			<li class="card check-card">
+				<span class="icon-tile"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span>
+				<h3 class="t-h3">Email authentication</h3>
+				<p class="t-small">SPF, DKIM and DMARC records for your domain</p>
+			</li>
+			<li class="card check-card">
+				<span class="icon-tile"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 14l4-4"/><path d="M3.3 17a9 9 0 1 1 17.4 0"/></svg></span>
+				<h3 class="t-h3">Performance</h3>
+				<p class="t-small">PageSpeed Insights performance on mobile</p>
+			</li>
+		</ul>
+		<div class="callout">
+			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+			<p>Scans are passive. They read what any visitor can already see. They do not scan ports, test passwords or attempt to exploit anything. Reports are deleted after 30 days.</p>
+		</div>
+	</div>
+</section>
+
+<section class="section" aria-labelledby="deeper-title">
+	<div class="container-site">
+		<div class="cta-band">
+			<p class="eyebrow">Go deeper</p>
+			<h2 class="t-h2" id="deeper-title">Want a person to look deeper?</h2>
+			<p class="t-body cta-text">This report only covers what can be seen from outside. A full audit reviews the site from the inside.</p>
+			<div class="cta-actions">
+				<a class="btn btn-primary" href="https://oldev.site/wordpress-audit/">See the WordPress audit
+					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+				</a>
+				<a class="btn btn-secondary" href="https://oldev.site/contact">Contact OLDEV</a>
+			</div>
+			<a class="link-arrow cta-home" href="https://oldev.site/">Visit oldev.site
+				<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+			</a>
+		</div>
+	</div>
+</section>
+<!-- /wp:html --></main>
+<!-- /wp:group -->
+
+<!-- wp:template-part {"slug":"footer","tagName":"footer","className":"site-footer-wrap"} /-->

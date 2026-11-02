@@ -1,13 +1,12 @@
-<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+<!-- wp:template-part {"slug":"header","tagName":"header","className":"site-header"} /-->
 
-<!-- wp:group {"tagName":"main","style":{"spacing":{"padding":{"top":"32px"}}},"layout":{"type":"constrained"}} -->
-<main class="wp-block-group" style="padding-top:32px"><!-- wp:heading {"level":1} -->
-<h1 class="wp-block-heading">Page not found</h1>
-<!-- /wp:heading -->
-
-<!-- wp:paragraph -->
-<p><a href="/">Back to the home page</a></p>
-<!-- /wp:paragraph --></main>
+<!-- wp:group {"tagName":"main","anchor":"main","className":"site-main page-main","layout":{"type":"constrained"}} -->
+<main id="main" class="wp-block-group site-main page-main"><!-- wp:html -->
+<p class="eyebrow">404</p>
+<h1 class="t-h1">Page not found</h1>
+<p class="t-lead">This page does not exist, or the link has expired.</p>
+<p class="cta-actions cta-left"><a class="btn btn-primary" href="/">Back to the home page</a><a class="btn btn-secondary" href="https://oldev.site/">Visit oldev.site</a></p>
+<!-- /wp:html --></main>
 <!-- /wp:group -->
 
-<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->
+<!-- wp:template-part {"slug":"footer","tagName":"footer","className":"site-footer-wrap"} /-->

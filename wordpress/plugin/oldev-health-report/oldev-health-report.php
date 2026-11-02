@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Website Health Report
  * Description:       Scored website health reports from passive checks, with a magic-link dashboard.
- * Version:           1.0.0
+ * Version:           1.1.0
  * Requires at least: 7.1
  * Requires PHP:      8.3
  * Author:            OLDEV
@@ -15,7 +15,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'OLDEV_HR_VERSION', '1.0.0' );
+define( 'OLDEV_HR_VERSION', '1.1.0' );
 define( 'OLDEV_HR_FILE', __FILE__ );
 define( 'OLDEV_HR_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OLDEV_HR_URL', plugin_dir_url( __FILE__ ) );

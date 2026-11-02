@@ -3,52 +3,80 @@
 	"version": 3,
 	"settings": {
 		"appearanceTools": true,
-		"layout": { "contentSize": "760px", "wideSize": "1080px" },
+		"layout": { "contentSize": "820px", "wideSize": "1152px" },
 		"color": {
+			"defaultPalette": false,
+			"defaultGradients": false,
 			"palette": [
-				{ "slug": "ink", "name": "Ink", "color": "#0f172a" },
-				{ "slug": "muted", "name": "Muted", "color": "#475569" },
-				{ "slug": "line", "name": "Line", "color": "#e2e8f0" },
-				{ "slug": "surface", "name": "Surface", "color": "#f1f5f9" },
-				{ "slug": "paper", "name": "Paper", "color": "#ffffff" },
-				{ "slug": "brand", "name": "Brand", "color": "#047857" }
+				{ "slug": "ink", "name": "Ink", "color": "rgb(var(--c-ink))" },
+				{ "slug": "muted", "name": "Muted", "color": "rgb(var(--c-muted))" },
+				{ "slug": "subtle", "name": "Subtle", "color": "rgb(var(--c-subtle))" },
+				{ "slug": "line", "name": "Line", "color": "rgb(var(--c-line))" },
+				{ "slug": "surface", "name": "Surface", "color": "rgb(var(--c-canvas-alt))" },
+				{ "slug": "paper", "name": "Paper", "color": "rgb(var(--c-surface))" },
+				{ "slug": "brand", "name": "Brand", "color": "rgb(var(--c-accent))" }
 			]
 		},
 		"typography": {
+			"defaultFontSizes": false,
 			"fontFamilies": [
 				{
-					"slug": "system",
-					"name": "System",
-					"fontFamily": "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+					"slug": "outfit",
+					"name": "Outfit",
+					"fontFamily": "Outfit, ui-sans-serif, system-ui, sans-serif",
+					"fontFace": [
+						{
+							"fontFamily": "Outfit",
+							"fontWeight": "400 700",
+							"fontStyle": "normal",
+							"fontDisplay": "swap",
+							"src": [ "file:./assets/fonts/outfit-latin-var.woff2" ]
+						}
+					]
+				},
+				{
+					"slug": "mono",
+					"name": "JetBrains Mono",
+					"fontFamily": "\"JetBrains Mono\", ui-monospace, monospace",
+					"fontFace": [
+						{
+							"fontFamily": "JetBrains Mono",
+							"fontWeight": "400 500",
+							"fontStyle": "normal",
+							"fontDisplay": "swap",
+							"src": [ "file:./assets/fonts/jetbrains-mono-latin-var.woff2" ]
+						}
+					]
 				}
 			],
 			"fontSizes": [
-				{ "slug": "small", "name": "Small", "size": "0.9rem" },
-				{ "slug": "medium", "name": "Medium", "size": "1.0625rem" },
-				{ "slug": "large", "name": "Large", "size": "1.35rem" },
-				{ "slug": "hero", "name": "Hero", "size": "clamp(2rem, 6vw, 3.25rem)" }
+				{ "slug": "small", "name": "Small", "size": "0.875rem" },
+				{ "slug": "medium", "name": "Medium", "size": "1rem" },
+				{ "slug": "large", "name": "Large", "size": "1.25rem" },
+				{ "slug": "hero", "name": "Hero", "size": "clamp(2.5rem, 6vw, 4.5rem)" }
 			]
 		},
 		"spacing": { "units": [ "px", "rem", "%" ] }
 	},
 	"styles": {
-		"color": { "background": "var(--wp--preset--color--paper)", "text": "var(--wp--preset--color--ink)" },
+		"color": { "background": "transparent", "text": "var(--wp--preset--color--ink)" },
 		"typography": {
-			"fontFamily": "var(--wp--preset--font-family--system)",
+			"fontFamily": "var(--wp--preset--font-family--outfit)",
 			"fontSize": "var(--wp--preset--font-size--medium)",
-			"lineHeight": "1.6"
+			"lineHeight": "1.7"
 		},
-		"spacing": { "padding": { "left": "20px", "right": "20px" } },
+		"spacing": { "blockGap": "1.25rem", "padding": { "left": "0", "right": "0" } },
 		"elements": {
 			"link": {
 				"color": { "text": "var(--wp--preset--color--brand)" }
 			},
 			"heading": {
-				"typography": { "fontWeight": "700", "lineHeight": "1.2" }
+				"color": { "text": "var(--wp--preset--color--ink)" },
+				"typography": { "fontWeight": "600", "lineHeight": "1.15", "letterSpacing": "-0.02em" }
 			},
-			"h1": { "typography": { "fontSize": "var(--wp--preset--font-size--hero)" } },
-			"h2": { "typography": { "fontSize": "1.6rem" } },
-			"h3": { "typography": { "fontSize": "1.2rem" } }
+			"h1": { "typography": { "fontSize": "clamp(2.25rem, 5vw, 3rem)", "letterSpacing": "-0.03em", "lineHeight": "1.08" } },
+			"h2": { "typography": { "fontSize": "clamp(1.875rem, 4vw, 2.25rem)" } },
+			"h3": { "typography": { "fontSize": "1.1875rem", "lineHeight": "1.3", "letterSpacing": "-0.01em" } }
 		}
 	},
 	"templateParts": [
