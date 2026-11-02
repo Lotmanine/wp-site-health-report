@@ -14,6 +14,7 @@ COPY docker/wordpress/mpm_prefork.conf /etc/apache2/mods-available/mpm_prefork.c
 COPY docker/wordpress/shr-php.ini /usr/local/etc/php/conf.d/shr.ini
 COPY docker/wordpress/shr-entrypoint.sh /usr/local/bin/shr-entrypoint.sh
 COPY docker/wordpress/shr-bootstrap.sh /usr/local/bin/shr-bootstrap.sh
+COPY docker/wordpress/wordfence-waf.php docker/wordpress/wordfence-config.php /opt/shr/
 RUN sed -i 's/\r$//' /usr/local/bin/shr-entrypoint.sh /usr/local/bin/shr-bootstrap.sh \
  && chmod +x /usr/local/bin/shr-entrypoint.sh /usr/local/bin/shr-bootstrap.sh
 
