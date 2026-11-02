@@ -21,8 +21,9 @@ test( 'the menu leads to oldev.site and the title has no dashes', async ( { page
 		await nav.getByLabel( 'Open menu' ).click();
 	}
 	await expect( nav.getByRole( 'link', { name: 'Visit oldev.site' } ).filter( { visible: true } ) ).toHaveAttribute( 'href', 'https://oldev.site/' );
-	await expect( nav.getByRole( 'link', { name: 'WordPress Audit' } ).filter( { visible: true } ) ).toHaveAttribute( 'href', 'https://oldev.site/wordpress-audit/' );
-	await expect( nav.getByRole( 'link', { name: 'Contact' } ).filter( { visible: true } ) ).toHaveAttribute( 'href', 'https://oldev.site/contact' );
+	await expect( nav.getByRole( 'link', { name: 'Scan', exact: true } ).filter( { visible: true } ) ).toHaveAttribute( 'href', '/' );
+	await expect( nav.getByRole( 'link', { name: 'History', exact: true } ).filter( { visible: true } ) ).toHaveAttribute( 'href', '/dashboard/' );
+	await expect( nav.getByRole( 'link', { name: 'Contact', exact: true } ).filter( { visible: true } ) ).toHaveAttribute( 'href', 'https://oldev.site/contact' );
 } );
 
 test( 'dark mode follows the system and the toggle remembers the choice', async ( { browser }, info ) => {
