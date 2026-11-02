@@ -38,6 +38,23 @@ add_action(
 	}
 );
 
+// The OLDEV mark from oldev.site, unless a site icon is set in the Customizer.
+add_action(
+	'wp_head',
+	static function (): void {
+		if ( has_site_icon() ) {
+			return;
+		}
+		printf(
+			'<link rel="icon" href="%s" type="image/svg+xml">' . "\n" . '<link rel="icon" href="%s" sizes="32x32" type="image/png">' . "\n" . '<link rel="apple-touch-icon" href="%s">' . "\n",
+			esc_url( get_theme_file_uri( 'assets/images/oldev-logo.svg' ) ),
+			esc_url( get_theme_file_uri( 'assets/images/favicon-32.png' ) ),
+			esc_url( get_theme_file_uri( 'assets/images/apple-touch-icon.png' ) )
+		);
+	},
+	2
+);
+
 add_action(
 	'wp_head',
 	static function (): void {

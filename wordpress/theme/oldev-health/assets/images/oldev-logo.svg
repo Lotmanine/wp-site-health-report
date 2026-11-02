@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="OLDEV">
+  <rect x="2" y="2" width="60" height="60" rx="8" ry="8"
+        fill="#020617" stroke="#10b981" stroke-width="2"/>
+  <text x="32" y="42" font-family="ui-monospace, 'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace"
+        font-weight="700" font-size="26" fill="#10b981" text-anchor="middle"
+        letter-spacing="-1">&lt;/&gt;</text>
+</svg>
