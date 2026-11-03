@@ -119,6 +119,16 @@ cd tests/e2e && npm install && npx playwright install chromium && npx playwright
 
 Deployment is covered in [DEPLOY.md](DEPLOY.md).
 
+## Author
+
+Built by **Lotfi Otmanine**, senior WordPress developer at [OLDEV](https://oldev.site).
+
+- Website: [oldev.site](https://oldev.site)
+- Hire me on Upwork: [upwork.com/freelancers/~01bd748fcb665b90ca](https://www.upwork.com/freelancers/~01bd748fcb665b90ca)
+- LinkedIn: [linkedin.com/in/lotfi-otmanine](https://www.linkedin.com/in/lotfi-otmanine)
+- GitHub: [github.com/Lotmanine](https://github.com/Lotmanine)
+- Case study: [oldev.site/work/26-website-health-report](https://oldev.site/work/26-website-health-report/)
+
 ## License
 
 GPL-2.0-or-later.
