@@ -132,15 +132,22 @@ class ReportTest extends TestCase {
 	}
 
 	public function test_private_pages_are_not_indexed(): void {
-		$page = self::factory()->post->create(
-			array(
-				'post_type'  => 'page',
-				'post_name'  => 'report',
-				'post_title' => 'Report',
-			)
-		);
-		$this->go_to( get_permalink( $page ) );
+		foreach ( array( 'report', 'dashboard' ) as $slug ) {
+			$page = self::factory()->post->create(
+				array(
+					'post_type'  => 'page',
+					'post_name'  => $slug,
+					'post_title' => ucfirst( $slug ),
+				)
+			);
+			$this->go_to( get_permalink( $page ) );
 
-		$this->assertTrue( \Oldev\HealthReport\Frontend\Blocks::robots( array() )['noindex'] );
+			$robots = \Oldev\HealthReport\Frontend\Blocks::robots( array() );
+			$this->assertTrue( $robots['noindex'], $slug );
+			$this->assertTrue( $robots['nofollow'], $slug );
+		}
+
+		$this->go_to( home_url( '/' ) );
+		$this->assertArrayNotHasKey( 'noindex', \Oldev\HealthReport\Frontend\Blocks::robots( array() ) );
 	}
 }
