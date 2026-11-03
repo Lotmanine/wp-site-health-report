@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  wordpress:
+    name: WordPress plugin and theme
+    runs-on: ubuntu-24.04
+    services:
+      testdb:
+        image: mariadb:11.8.9
+        env:
+          MARIADB_DATABASE: wp_tests
+          MARIADB_USER: wp_tests
+          MARIADB_PASSWORD: wp_tests
+          MARIADB_RANDOM_ROOT_PASSWORD: "1"
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=3s
+          --health-timeout=3s
+          --health-retries=30
+    steps:
+      - uses: actions/checkout@v5
+
+      # Same image as the local test profile: PHP 8.5 with WordPress 7.1.4 in /opt/wordpress.
+      - name: Build the tools image
+        run: docker build -t shr-tools -f docker/tools/Dockerfile .
+
+      - name: Install dependencies
+        run: docker run --rm -v "$PWD/wordpress/plugin/oldev-health-report:/app" shr-tools composer install --no-interaction --no-progress
+
+      - name: PHPUnit on WordPress and MariaDB
+        run: >-
+          docker run --rm --network host
+          -e WP_TESTS_DB_HOST=127.0.0.1:3306
+          -v "$PWD/wordpress/plugin/oldev-health-report:/app"
+          shr-tools vendor/bin/phpunit
+
+      - name: PHPCS, plugin
+        run: docker run --rm -v "$PWD/wordpress/plugin/oldev-health-report:/app" shr-tools vendor/bin/phpcs
+
+      - name: PHPStan, plugin
+        run: docker run --rm -v "$PWD/wordpress/plugin/oldev-health-report:/app" shr-tools vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+
+      - name: PHPCS, theme
+        run: >-
+          docker run --rm -w /theme
+          -v "$PWD/wordpress/plugin/oldev-health-report:/app"
+          -v "$PWD/wordpress/theme/oldev-health:/theme"
+          shr-tools /app/vendor/bin/phpcs --standard=WordPress --extensions=php
+          --runtime-set minimum_wp_version 7.1 --runtime-set text_domain oldev-health functions.php
+
+      - name: PHPStan, theme
+        run: >-
+          docker run --rm -w /theme
+          -v "$PWD/wordpress/plugin/oldev-health-report:/app"
+          -v "$PWD/wordpress/theme/oldev-health:/theme"
+          shr-tools /app/vendor/bin/phpstan analyse --level 6 --memory-limit=1G --no-progress functions.php
+
+  scanner:
+    name: Scanner
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build the tools image
+        run: docker build -t shr-tools -f docker/tools/Dockerfile .
+
+      - name: PHPUnit
+        run: docker run --rm -v "$PWD/scanner:/app" shr-tools sh -c "composer install --no-interaction --no-progress && vendor/bin/phpunit"
