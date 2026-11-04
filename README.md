@@ -1,5 +1,10 @@
 # Website Health Report
 
+[![CI: WordPress PHPUnit on MariaDB, PHPCS and PHPStan for plugin and theme, scanner PHPUnit](https://github.com/Lotmanine/wp-site-health-report/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Lotmanine/wp-site-health-report/actions/workflows/ci.yml)
+
+CI runs the WordPress PHPUnit suite on WordPress 7.1 and MariaDB, PHPCS and PHPStan for the plugin and the theme,
+and the scanner's PHPUnit suite. The Playwright end-to-end tests run locally only.
+
 A visitor enters a website address and gets a scored report on security headers, the TLS certificate,
 search basics, email authentication and performance, with a ranked list of what to fix first.
 
